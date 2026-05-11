@@ -1,0 +1,1408 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FoundryNet — Talk to your fleet</title>
+<meta name="description" content="Normalize Geotab, Samsara, CalAmp, OBD-II telemetry. Monitor vehicle health, driver behavior, fuel efficiency in plain English.">
+<meta property="og:title" content="FoundryNet — Talk to your fleet">
+<meta property="og:description" content="Normalize Geotab, Samsara, CalAmp, OBD-II telemetry. Monitor vehicle health, driver behavior, fuel efficiency in plain English.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #08080d;
+    --bg-elev:   #0c0f17;
+    --bg-term:   #000000;
+    --bg-code:   #050609;
+    --rule:      #16202e;
+    --rule-soft: #0f1722;
+    --fg:        #d8dfeb;
+    --fg-mid:    #8d99ad;
+    --fg-dim:    #5a6678;
+    --jade:      #1a9058;
+    --jade-soft: #2dbb78;
+    --jade-glow: rgba(45, 187, 120, 0.35);
+    --amber:     #f0a030;
+    --amber-glow: rgba(240, 160, 48, 0.35);
+    --max:       1020px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+         font-size: 15px; line-height: 1.7; font-weight: 400;
+         -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  h1, h2, h3 { font-family: 'JetBrains Mono', ui-monospace, monospace;
+               font-weight: 500; margin: 0; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(36px, 5.5vw, 60px); line-height: 1.05;
+       color: var(--fg); font-weight: 600; letter-spacing: -0.025em; }
+  h2 { font-size: clamp(22px, 2.6vw, 30px); color: var(--fg);
+       margin-bottom: 18px; font-weight: 500; letter-spacing: -0.01em; }
+  h3 { font-size: 11px; color: var(--jade-soft); margin-bottom: 10px;
+       font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+  p  { margin: 0 0 14px; color: var(--fg); }
+  a  { color: var(--jade-soft); text-decoration: none;
+       transition: color .15s ease; }
+  a:hover { color: var(--amber); }
+  ul, ol { color: var(--fg-mid); padding-left: 20px; line-height: 1.85; }
+  li { margin: 4px 0; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.92em;
+         color: var(--amber); background: transparent; }
+
+  section { padding: 90px 28px; max-width: var(--max); margin: 0 auto; }
+  section.first { padding-top: 130px; }
+
+  .label { font-family: 'JetBrains Mono', monospace; font-size: 11px;
+           color: var(--fg-dim); font-weight: 400; letter-spacing: 0.22em;
+           text-transform: uppercase; }
+
+  /* HERO ---------------------------------------------------------- */
+  .hero p.sub { font-size: 22px; color: var(--fg-mid); margin: 22px 0 32px;
+                max-width: 640px; font-weight: 300; line-height: 1.5; }
+  .proof { color: var(--jade-soft); font-size: 12px; letter-spacing: 0.18em;
+           text-transform: uppercase; margin-bottom: 44px; font-weight: 400;
+           font-family: 'JetBrains Mono', monospace; }
+  .proof .dot { color: var(--rule); margin: 0 12px; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 64px; }
+  .btn { display: inline-block; padding: 13px 24px; border-radius: 4px;
+         font-family: 'JetBrains Mono', monospace; font-size: 13px;
+         font-weight: 500; letter-spacing: 0.02em;
+         transition: all .18s ease; cursor: pointer; }
+  .btn.primary { background: var(--jade); color: #050609;
+                 box-shadow: 0 0 0 1px var(--jade), 0 4px 24px rgba(26, 144, 88, 0.18); }
+  .btn.primary:hover { background: var(--jade-soft); color: #050609;
+                       box-shadow: 0 0 0 1px var(--jade-soft), 0 6px 32px rgba(45, 187, 120, 0.32); }
+  .btn.secondary { background: transparent; color: var(--fg);
+                   border: 1px solid var(--rule); }
+  .btn.secondary:hover { border-color: var(--jade-soft); color: var(--jade-soft); }
+
+  /* SIGNUP PANEL --------------------------------------------------- */
+  .signup { display: none; margin: 0 0 64px; padding: 24px;
+            border: 1px solid var(--rule); border-left: 2px solid var(--jade);
+            background: var(--bg-elev); border-radius: 4px;
+            max-width: 640px; }
+  .signup.open { display: block; }
+  .signup .row { display: flex; flex-wrap: wrap; gap: 10px;
+                 margin-top: 8px; }
+  .signup label { font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                  color: var(--fg-dim); letter-spacing: 0.18em;
+                  text-transform: uppercase; }
+  .signup input[type=email] { flex: 1 1 280px; padding: 12px 14px;
+                              background: var(--bg-code); color: var(--fg);
+                              font-family: 'JetBrains Mono', monospace;
+                              font-size: 13px; border: 1px solid var(--rule);
+                              border-radius: 4px; outline: none;
+                              transition: border-color .15s; }
+  .signup input[type=email]:focus { border-color: var(--jade-soft); }
+  .signup .help { color: var(--fg-dim); font-size: 12px; margin-top: 10px; }
+  .signup-options { display: grid; grid-template-columns: 1fr 1fr;
+                    gap: 14px; }
+  .signup-options > div { background: var(--bg-code);
+                          border: 1px solid var(--rule); border-radius: 5px;
+                          padding: 18px; display: flex; flex-direction: column;
+                          gap: 10px; }
+  .signup-options .free-option { border-left: 2px solid var(--jade); }
+  .signup-options .paid-option { border-left: 2px solid var(--amber); }
+  .signup-options h3 { font-family: 'JetBrains Mono', monospace;
+                       font-size: 13px; color: var(--fg);
+                       margin: 0; font-weight: 500; letter-spacing: 0.02em; }
+  .signup-options p  { color: var(--fg-mid); font-size: 12.5px;
+                       margin: 0 0 4px; line-height: 1.5; }
+  .signup-options input[type=email] { width: 100%; padding: 10px 12px;
+                                      background: var(--bg); color: var(--fg);
+                                      border: 1px solid var(--rule);
+                                      border-radius: 4px;
+                                      font-family: 'JetBrains Mono', monospace;
+                                      font-size: 12px; outline: none; }
+  .signup-options input[type=email]:focus { border-color: var(--jade-soft); }
+  .signup-options button { width: 100%; }
+  @media (max-width: 600px) { .signup-options { grid-template-columns: 1fr; } }
+  .signup .err  { color: var(--amber); font-size: 12px; margin-top: 10px;
+                  display: none; font-family: 'JetBrains Mono', monospace; }
+  .signup .err.show { display: block; }
+  .signup .keybox { margin-top: 10px; padding: 14px; background: var(--bg-code);
+                    border: 1px dashed var(--jade); border-radius: 4px;
+                    color: var(--amber); font-family: 'JetBrains Mono', monospace;
+                    font-size: 13px; word-break: break-all; line-height: 1.5; }
+  .signup .copy { margin-top: 10px; }
+  .signup .ok-line { color: var(--jade-soft); font-family: 'JetBrains Mono', monospace;
+                     font-size: 12px; letter-spacing: 0.06em; margin-top: 14px; }
+  .signup h3 { margin-bottom: 8px; }
+
+  /* TERMINAL MOCKUP ----------------------------------------------- */
+  .term { background: var(--bg-term); border: 1px solid var(--rule);
+          border-radius: 6px; padding: 26px 28px;
+          font-family: 'JetBrains Mono', monospace; font-size: 13.5px;
+          line-height: 1.95; max-width: 740px;
+          box-shadow: 0 24px 80px rgba(0,0,0,.6),
+                      0 0 0 1px rgba(45, 187, 120, 0.04); }
+  .term .you, .term .feed { color: var(--jade-soft);
+                            text-shadow: 0 0 10px var(--jade-glow); }
+  .term .you::before, .term .feed::before { content: "> "; color: var(--jade);
+                                            text-shadow: 0 0 10px var(--jade-glow); }
+  .term .ok   { color: var(--jade-soft); opacity: 0.95; }
+  .term .ok::before { content: "✓ "; color: var(--jade); }
+  .term .fire { color: var(--amber); font-weight: 500;
+                text-shadow: 0 0 12px var(--amber-glow); }
+  .term .fire::before { content: "🔥 "; }
+  .term .gap { display: block; height: 12px; }
+
+  /* BEYOND MACHINES (operations pitch) ---------------------------- */
+  .beyond { display: grid; grid-template-columns: 1fr 1fr; gap: 36px;
+            margin-top: 40px; }
+  .beyond .col h3 { font-family: 'JetBrains Mono', monospace;
+                    color: var(--jade-soft); font-size: 12px;
+                    font-weight: 500; letter-spacing: 0.18em;
+                    text-transform: uppercase; margin-bottom: 14px; }
+  .beyond .col p { color: var(--fg-mid); font-size: 14.5px;
+                   line-height: 1.65; margin: 0 0 18px;
+                   font-weight: 400; }
+  .term.compact { padding: 18px 20px; font-size: 12.5px;
+                  line-height: 1.85; max-width: none; box-shadow: none;
+                  border: 1px solid var(--rule); }
+  .beyond-foot { margin-top: 32px; color: var(--fg-mid);
+                 font-size: 14px; max-width: 720px;
+                 font-style: normal; }
+  .beyond-foot strong { color: var(--fg); font-weight: 500; }
+  .beyond-sub { color: var(--fg-mid); font-size: 16px; line-height: 1.55;
+                margin: 6px 0 0; max-width: 760px; font-weight: 300; }
+  @media (max-width: 720px) {
+    .beyond { grid-template-columns: 1fr; }
+  }
+
+  /* HOW IT WORKS -------------------------------------------------- */
+  .grid3 { display: grid; gap: 36px;
+           grid-template-columns: repeat(3, 1fr); margin-top: 40px; }
+  .col h3 { display: flex; align-items: baseline; gap: 12px; }
+  .col h3 .num { color: var(--amber); font-size: 12px; letter-spacing: 0.1em; }
+  .col p { color: var(--fg-mid); font-size: 14.5px; line-height: 1.65;
+           margin: 0; font-weight: 400; }
+
+  /* CONNECTIONS --------------------------------------------------- */
+  .pillrow { display: flex; flex-wrap: wrap; align-items: center;
+             gap: 8px 8px; margin-bottom: 22px; }
+  .pillrow .label { width: 100%; margin-bottom: 8px; }
+  .pill { font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+          color: var(--fg-mid); background: transparent;
+          border: 1px solid var(--rule); border-radius: 3px;
+          padding: 7px 13px; font-weight: 400;
+          transition: all .15s ease; }
+  .pill:hover { color: var(--jade-soft); border-color: rgba(45,187,120,0.35); }
+  .footnote { color: var(--fg-dim); font-size: 13px; line-height: 1.7;
+              margin-top: 24px; max-width: 720px; font-weight: 400; }
+
+  /* PRICING (outlined cards) -------------------------------------- */
+  .grid4 { display: grid; gap: 14px;
+           grid-template-columns: repeat(4, 1fr); margin: 32px 0 28px; }
+  .card { background: transparent;
+          border: 1px solid var(--rule);
+          border-top: 1px solid rgba(26, 144, 88, 0.45);
+          border-radius: 4px; padding: 26px 22px;
+          transition: border-color .2s ease, transform .2s ease; }
+  .card:hover { transform: translateY(-2px); border-top-color: var(--jade-soft); }
+  .card .name  { color: var(--fg-mid); font-size: 11px; font-weight: 400;
+                 letter-spacing: 0.18em; text-transform: uppercase;
+                 margin-bottom: 14px; font-family: 'JetBrains Mono', monospace; }
+  .card .price { color: var(--fg); font-size: 28px; font-weight: 500;
+                 margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;
+                 letter-spacing: -0.02em; }
+  .card .price .unit { color: var(--fg-dim); font-size: 13px; font-weight: 400;
+                       letter-spacing: 0; margin-left: 2px; }
+  .card .desc  { color: var(--fg-mid); font-size: 13px; line-height: 1.55;
+                 font-weight: 400; }
+  .free-line { color: var(--fg-mid); font-size: 13px; line-height: 1.85;
+               font-weight: 400; max-width: 680px; margin-top: 22px; }
+  .free-line strong { color: var(--fg); font-family: 'JetBrains Mono', monospace;
+                      font-weight: 500; }
+
+  /* PRICING TIERS ------------------------------------------------- */
+  .tier-grid { display: grid; gap: 16px; margin: 32px 0 12px;
+               grid-template-columns: repeat(3, 1fr); }
+  .tier { background: var(--bg-elev); border: 1px solid var(--rule);
+          border-top: 1px solid var(--rule);
+          border-radius: 5px; padding: 26px 24px;
+          display: flex; flex-direction: column; gap: 16px;
+          transition: border-color .2s ease, transform .2s ease; }
+  .tier:hover { transform: translateY(-2px); }
+  .tier-starter   { border-top: 2px solid var(--jade);
+                    box-shadow: 0 0 0 1px rgba(26,144,88,.18); }
+  .tier-growth    { border-top: 1px solid rgba(45,187,120,.45); }
+  .tier-enterprise{ border-top: 1px solid rgba(240,160,48,.45); }
+  .tier-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .tier .name { font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                color: var(--jade-soft); letter-spacing: 0.22em;
+                text-transform: uppercase; font-weight: 500; }
+  .tier-enterprise .name { color: var(--amber); }
+  .tier .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px;
+                 color: var(--fg-dim); letter-spacing: 0.06em; }
+  .tier .badge.recommended { color: var(--jade-soft); }
+  .tier .price-list { display: flex; flex-direction: column; gap: 6px; }
+  .tier .line { display: flex; justify-content: space-between; align-items: baseline;
+                font-family: 'JetBrains Mono', monospace; font-size: 13px;
+                color: var(--fg-mid); padding: 4px 0;
+                border-bottom: 1px dashed var(--rule-soft); }
+  .tier .line:last-child { border-bottom: none; }
+  .tier .line .what { color: var(--fg-mid); }
+  .tier .line .amt  { color: var(--fg); font-weight: 500; }
+  .tier-growth .line .amt,
+  .tier-enterprise .line .amt { color: var(--jade-soft); }
+  .tier .desc { color: var(--fg-mid); font-size: 13px; line-height: 1.55;
+                margin: 0; }
+  .tier input[type=email] { width: 100%; padding: 10px 12px;
+                            background: var(--bg-code); color: var(--fg);
+                            border: 1px solid var(--rule); border-radius: 4px;
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 12px; outline: none; box-sizing: border-box; }
+  .tier input[type=email]:focus { border-color: var(--jade-soft); }
+  .tier .cta { display: inline-block; padding: 11px 16px; border-radius: 4px;
+               font-family: 'JetBrains Mono', monospace; font-size: 12px;
+               font-weight: 500; letter-spacing: 0.04em; text-align: center;
+               transition: all .15s ease; cursor: pointer; border: none; }
+  .tier-starter .cta { background: var(--jade); color: #050609;
+                       box-shadow: 0 0 0 1px var(--jade), 0 4px 18px rgba(26,144,88,.18); }
+  .tier-starter .cta:hover { background: var(--jade-soft); color: #050609; }
+  .tier-growth .cta, .tier-enterprise .cta {
+    background: transparent; color: var(--fg); border: 1px solid var(--rule); }
+  .tier-growth .cta:hover, .tier-enterprise .cta:hover {
+    border-color: var(--jade-soft); color: var(--jade-soft); }
+  .tier .hint { color: var(--fg-dim); font-size: 11px; margin: 0;
+                font-family: 'JetBrains Mono', monospace; letter-spacing: 0.04em; }
+  @media (max-width: 760px) { .tier-grid { grid-template-columns: 1fr; } }
+
+  /* INTEGRATORS --------------------------------------------------- */
+  .integrators p { color: var(--fg-mid); max-width: 700px;
+                   margin-bottom: 28px; font-size: 15.5px; font-weight: 400;
+                   line-height: 1.7; }
+  .small-note { color: var(--fg-dim); font-size: 12.5px;
+                margin-top: 18px; font-style: italic; font-weight: 400; }
+
+  /* MCP / CODE ---------------------------------------------------- */
+  pre.code, pre { background: var(--bg-term); border: 1px solid var(--rule);
+                  border-radius: 6px; padding: 18px 22px;
+                  font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
+                  color: var(--fg); overflow-x: auto; line-height: 1.55;
+                  margin: 12px 0; max-width: 740px;
+                  box-shadow: 0 16px 48px rgba(0,0,0,.4); }
+  pre code { color: var(--fg); font-size: inherit; }
+  pre.code .key { color: var(--amber); }
+  pre.code .str { color: var(--jade-soft); }
+  .mcp-summary { color: var(--fg-mid); font-size: 14px; margin-bottom: 22px;
+                 font-weight: 400; }
+  .mcp-links a { margin-right: 24px; font-family: 'JetBrains Mono', monospace;
+                 font-size: 13px; }
+
+  /* DOCS SECTION (nested below landing) --------------------------- */
+  .docs-divider { border: 0; border-top: 1px solid var(--rule);
+                  max-width: var(--max); margin: 60px auto 0; }
+  .docs-intro { color: var(--fg-mid); font-size: 14.5px;
+                margin-bottom: 32px; max-width: 720px; }
+  .docs h2 { margin-top: 56px; margin-bottom: 14px; }
+  .docs h2:first-of-type { margin-top: 0; }
+  .docs h3 { color: var(--jade-soft); margin-top: 30px; margin-bottom: 8px; }
+  .docs p { color: var(--fg-mid); font-size: 14px; line-height: 1.7; }
+  .docs ol, .docs ul { color: var(--fg-mid); font-size: 14px; }
+
+  /* LEGAL SECTION (TOS + Privacy, anchored at #terms / #privacy) -- */
+  .legal h1 { font-family: 'JetBrains Mono', monospace;
+              color: var(--jade-soft); font-size: 24px;
+              font-weight: 500; margin: 0 0 8px;
+              letter-spacing: -0.01em; }
+  .legal h2 { color: var(--amber); font-size: 16px;
+              margin: 40px 0 12px; font-family: 'JetBrains Mono', monospace; }
+  .legal h2:first-of-type { margin-top: 24px; }
+  .legal h3 { color: var(--fg); font-size: 14px;
+              margin: 24px 0 8px; letter-spacing: 0;
+              text-transform: none; font-family: 'JetBrains Mono', monospace; }
+  .legal p  { color: var(--fg-mid); font-size: 14px; line-height: 1.8;
+              margin: 0 0 14px; }
+  .legal .updated { color: var(--fg-dim); font-size: 12px;
+                    margin-bottom: 32px;
+                    font-family: 'JetBrains Mono', monospace;
+                    letter-spacing: 0.06em; }
+  .legal hr { border: none; border-top: 1px solid var(--rule);
+              margin: 48px 0; }
+  .endpoint { border-top: 1px solid var(--rule); padding-top: 20px;
+              margin-top: 26px; }
+  .endpoint:first-of-type { margin-top: 18px; }
+  .endpoint .method { display: inline-block; color: var(--bg);
+                      background: var(--jade); padding: 1px 9px;
+                      border-radius: 3px; font-weight: 600; font-size: 11px;
+                      vertical-align: 2px; font-family: 'JetBrains Mono', monospace;
+                      letter-spacing: 0.05em; }
+  .endpoint .method.get { background: var(--amber); }
+  .endpoint .path { color: var(--fg); font-size: 14px; }
+  .endpoint .desc { color: var(--fg-mid); margin: 6px 0 12px;
+                    font-size: 14px; line-height: 1.65; }
+
+  /* FOOTER (single line) ----------------------------------------- */
+  footer { border-top: 1px solid var(--rule); padding: 28px;
+           max-width: var(--max); margin: 80px auto 0;
+           color: var(--fg-dim); font-size: 12px; text-align: center;
+           font-family: 'JetBrains Mono', monospace; font-weight: 400;
+           letter-spacing: 0.02em; line-height: 1.8; }
+  footer .sep { color: var(--rule); margin: 0 12px; }
+  footer a { color: var(--fg-mid); }
+  footer a:hover { color: var(--jade-soft); }
+
+  /* RESPONSIVE --------------------------------------------------- */
+  @media (max-width: 760px) {
+    section { padding: 70px 22px; }
+    section.first { padding-top: 90px; }
+    .grid3 { grid-template-columns: 1fr; gap: 32px; }
+    .grid4 { grid-template-columns: 1fr 1fr; }
+    .term { font-size: 12px; padding: 20px; }
+    .hero p.sub { font-size: 18px; }
+    footer { font-size: 11px; }
+    footer .sep { margin: 0 8px; }
+  }
+  @media (max-width: 460px) {
+    .grid4 { grid-template-columns: 1fr; }
+    footer .sep.collapse { display: block; visibility: hidden; height: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── 1. HERO ─────────────────────────────────────────────────────── -->
+<section class="hero first">
+  <h1>Talk to your fleet.</h1>
+  <p class="sub">Normalize Geotab, Samsara, CalAmp, OBD-II telemetry. Monitor vehicle health, driver behavior, fuel efficiency in plain English.</p>
+  <p class="proof">
+    Any OEM<span class="dot">·</span>Any machine<span class="dot">·</span>Natural language<span class="dot">·</span>Verified on-chain
+  </p>
+  <div class="ctas">
+    <a href="#demo" class="btn primary">Watch the demo</a>
+    <a href="#" class="btn secondary" id="signup-toggle">Get your API key</a>
+  </div>
+
+  <div class="signup" id="signup-panel">
+    <h3>Self-serve signup</h3>
+    <div id="signup-step-email">
+      <div class="signup-options">
+        <div class="free-option">
+          <h3>Try it free</h3>
+          <p>50 normalize calls. Email only. No card.</p>
+          <input type="email" id="signup-email-free" placeholder="you@company.com" autocomplete="email">
+          <button class="btn secondary" id="signup-free">Get free API key →</button>
+        </div>
+        <div class="paid-option">
+          <h3>Full access</h3>
+          <p>All endpoints. Usage-based billing.</p>
+          <input type="email" id="signup-email-paid" placeholder="you@company.com" autocomplete="email">
+          <button class="btn primary" id="signup-paid">Continue to Stripe →</button>
+        </div>
+      </div>
+      <div class="err" id="signup-err"></div>
+      <p class="help" style="margin-top:14px; font-size:11px;">
+        By continuing, you agree to the <a href="#terms">Terms of Service</a>
+        and <a href="#privacy">Privacy Policy</a>.
+      </p>
+    </div>
+    <div id="signup-step-activating" style="display:none">
+      <p class="help" style="margin-top:0">Activating your account…</p>
+    </div>
+    <div id="signup-step-key" style="display:none">
+      <p class="help" style="margin-top:0">
+        <strong style="color:var(--jade-soft)">Save this key now.</strong>
+        It is shown <em>once</em> — we only store its hash.
+      </p>
+      <div class="keybox" id="signup-key"></div>
+      <div class="row">
+        <button class="btn secondary copy" id="signup-copy">Copy key</button>
+      </div>
+      <div class="ok-line" id="signup-meta"></div>
+    </div>
+  </div>
+
+  <div class="term">
+    <div class="you">"Connect truck VIN-2024-XJ9847"</div>
+    <div class="ok">Vehicle MINT-vin847 provisioned on Solana</div>
+    <span class="gap"></span>
+    <div class="you">"Alert me when tire pressure drops below 32 PSI"</div>
+    <div class="ok">Automation armed — monitoring vehicle.tire_pressure_fr</div>
+    <span class="gap"></span>
+    <div class="you">"Show me fleet fuel efficiency this week"</div>
+    <div class="ok">Fleet avg 6.8 mpg · 12% better than last week</div>
+    <span class="gap"></span>
+    <div class="feed">"New reading: tire_pressure_fr at 29 PSI"</div>
+    <div class="fire">Alert fired → Slack #fleet-alerts (186ms)</div>
+  </div>
+</section>
+
+<!-- ── 2. HOW IT WORKS ──────────────────────────────────────────────── -->
+<section>
+  <h2>Three steps. No code.</h2>
+  <div class="grid3">
+    <div class="col">
+      <h3><span class="num">01</span>Connect</h3>
+      <p>Identify any machine by OEM, model, and serial. Or connect any business system via webhook. The agent works with machines and software.</p>
+    </div>
+    <div class="col">
+      <h3><span class="num">02</span>Talk</h3>
+      <p>Send telemetry in any format or trigger evaluations from any source. Set up automations in one sentence. "Alert when coolant exceeds 30" or "notify purchasing when inventory drops below 50."</p>
+    </div>
+    <div class="col">
+      <h3><span class="num">03</span>Act</h3>
+      <p>Triggers fire to any system. Slack, ERP, CMMS, MES, email. Everything logged, auditable, and settled on Solana.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── 2.5 BEYOND MACHINES (operations pitch) ─────────────────────── -->
+<section>
+  <h2>Claude Code for your operations.</h2>
+  <p class="beyond-sub">
+    The same AI that writes code from natural language can run your
+    business operations. Update your ERP. Create work orders. Trigger
+    purchase orders. Send shift reports. All from one sentence.
+  </p>
+
+  <div class="beyond">
+    <div class="col">
+      <h3>Machines</h3>
+      <p>Connect any CNC, robot, or industrial equipment. The agent normalizes telemetry from any OEM, monitors health continuously, and takes action when conditions change. Every reading verified on-chain.</p>
+      <div class="term compact">
+        <div class="you">"Connect the Haas VF-2SS on Line 4"</div>
+        <div class="you">"Alert when spindle load exceeds 85%"</div>
+        <div class="you">"How's this machine trending?"</div>
+      </div>
+    </div>
+    <div class="col">
+      <h3>Operations</h3>
+      <p>Connect any business system with a webhook. The agent triggers actions across ERP, CMMS, MES, quality, scheduling, email, and any HTTP endpoint. No integration code. No middleware. One sentence.</p>
+      <div class="term compact">
+        <div class="you">"When inventory drops below 50, notify purchasing"</div>
+        <div class="you">"Every Friday at 5pm, send the production summary"</div>
+        <div class="you">"Create a work order for coolant system maintenance"</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="beyond-foot">
+    <strong>Same agent. Same billing. Same audit trail.</strong>
+    Machines and software, unified through natural language.
+  </p>
+</section>
+
+<!-- ── 3. CONNECTIONS ──────────────────────────────────────────────── -->
+<section>
+  <h2>Works with everything you already have.</h2>
+  <div class="pillrow">
+    <span class="label">OEMs</span>
+    <span class="pill">Geotab</span>
+    <span class="pill">Samsara</span>
+    <span class="pill">CalAmp</span>
+    <span class="pill">Motive</span>
+    <span class="pill">OBD-II</span>
+  </div>
+  <div class="pillrow">
+    <span class="label">Systems</span>
+    <span class="pill">Slack</span><span class="pill">SAP</span>
+    <span class="pill">Epicor</span><span class="pill">Oracle</span>
+    <span class="pill">Fiix</span><span class="pill">UpKeep</span>
+    <span class="pill">MaintainX</span><span class="pill">Plex</span>
+    <span class="pill">Ignition</span><span class="pill">Any webhook</span>
+  </div>
+  <p class="footnote">
+    Works with Claude Desktop, Cursor, GPT, or any MCP-compatible client.
+    Complements AWS IoT, Azure IoT, Siemens MindSphere, PTC ThingWorx.
+  </p>
+</section>
+
+<!-- ── 4. PRICING ──────────────────────────────────────────────────── -->
+<section>
+  <h2>Pay for what you use.</h2>
+  <div class="tier-grid">
+
+    <div class="tier tier-starter">
+      <div class="tier-head">
+        <span class="name">Starter</span>
+        <span class="badge recommended">recommended</span>
+      </div>
+      <div class="price-list">
+        <div class="line"><span class="what">Normalize</span><span class="amt">1¢/call</span></div>
+        <div class="line"><span class="what">Trigger</span><span class="amt">5¢/fire</span></div>
+        <div class="line"><span class="what">Settle</span><span class="amt">2¢/batch</span></div>
+        <div class="line"><span class="what">History</span><span class="amt">1¢/query</span></div>
+      </div>
+      <p class="desc">No minimums. No contracts. Pay as you go.</p>
+      <a href="#" class="cta" id="tier-starter-cta">Get free API key</a>
+      <p class="hint">50 free normalize calls to start. No card required.</p>
+    </div>
+
+    <div class="tier tier-growth">
+      <div class="tier-head">
+        <span class="name">Growth</span>
+        <span class="badge">100K+/mo · 30% off</span>
+      </div>
+      <div class="price-list">
+        <div class="line"><span class="what">Normalize</span><span class="amt">0.7¢/call</span></div>
+        <div class="line"><span class="what">Trigger</span><span class="amt">3.5¢/fire</span></div>
+        <div class="line"><span class="what">Settle</span><span class="amt">1.4¢/batch</span></div>
+        <div class="line"><span class="what">History</span><span class="amt">0.7¢/query</span></div>
+      </div>
+      <p class="desc">30% volume discount. Monthly invoice.</p>
+      <input type="email" id="signup-email-growth" placeholder="you@company.com" autocomplete="email">
+      <button class="cta" id="signup-growth">Start Growth tier →</button>
+      <p class="hint">Card required. Discounted pricing from your first call.</p>
+    </div>
+
+    <div class="tier tier-enterprise">
+      <div class="tier-head">
+        <span class="name">Enterprise</span>
+        <span class="badge">1M+/mo · 60% off</span>
+      </div>
+      <div class="price-list">
+        <div class="line"><span class="what">Normalize</span><span class="amt">0.4¢/call</span></div>
+        <div class="line"><span class="what">Trigger</span><span class="amt">2¢/fire</span></div>
+        <div class="line"><span class="what">Settle</span><span class="amt">1¢/batch</span></div>
+        <div class="line"><span class="what">History</span><span class="amt">0.4¢/query</span></div>
+      </div>
+      <p class="desc">Custom SLA. Dedicated MCP endpoint. Annual contract.</p>
+      <a href="mailto:foundrynet@proton.me?subject=Enterprise%20tier%20pricing" class="cta">Contact us</a>
+    </div>
+
+  </div>
+  <p class="free-line">
+    <strong>Identity:</strong> free.
+    <strong>Automation setup:</strong> free.
+    <strong>Trigger evaluation:</strong> free.
+    <strong>Feedback:</strong> free.
+    <br>No subscriptions. No minimums. No contracts.
+  </p>
+</section>
+
+<!-- ── 5. FOR INTEGRATORS ──────────────────────────────────────────── -->
+<section class="integrators">
+  <h2>One API. Every deployment.</h2>
+  <p>
+    Add FoundryNet to your integration toolkit. Every machine you connect gets
+    cross-manufacturer normalization, natural-language automations, and on-chain
+    verification. Your customers get smarter machines. You get recurring revenue
+    from every API call.
+  </p>
+  <a class="btn primary" href="mailto:foundrynet@proton.me?subject=Integrator%20partner%20program">Become an integrator partner</a>
+  <p class="small-note">Integrator revenue share program coming soon. Earn on every machine you connect.</p>
+</section>
+
+<!-- ── 6. MCP SERVER ───────────────────────────────────────────────── -->
+<section>
+  <h2>Connect in 30 seconds.</h2>
+  <p style="color:var(--fg-mid);font-size:14px;margin-bottom:6px;">
+    Drop this into your Claude Desktop config:
+  </p>
+<pre class="code">{
+  <span class="key">"mcpServers"</span>: {
+    <span class="key">"foundrynet"</span>: {
+      <span class="key">"command"</span>: <span class="str">"npx"</span>,
+      <span class="key">"args"</span>: [<span class="str">"mcp-remote"</span>,
+        <span class="str">"https://foundrynet-mcp-production.up.railway.app/sse"</span>]
+    }
+  }
+}</pre>
+  <p class="mcp-summary">11 tools. SSE transport. Works with any MCP client.</p>
+  <p class="mcp-links">
+    <a href="#docs">View API docs ↓</a>
+    <a href="https://github.com/FoundryNet">GitHub →</a>
+  </p>
+</section>
+
+<!-- ── DOCS (in-page section, anchored at #docs) ────────────────────── -->
+<hr class="docs-divider">
+<section id="docs" class="docs">
+  <h2>API Reference</h2>
+  <p class="docs-intro">
+    All <code>/v1/*</code> requests need <code>Authorization: Bearer fnet_…</code> and (where applicable) <code>Content-Type: application/json</code>. Base URL: <code>https://forge.foundrynet.io</code>.
+  </p>
+
+  <h2>Quick start</h2>
+  <ol>
+    <li>Get your API key: self-serve via <code>POST /v1/keys/checkout</code> → Stripe Checkout → <code>POST /v1/keys/activate</code> (or use the form at the top of this page)</li>
+    <li>Identify a machine: <code>POST /v1/identify</code></li>
+    <li>Send data: <code>POST /v1/normalize</code></li>
+    <li>Connect a tool: <code>POST /v1/tools</code></li>
+    <li>Set up automation: <code>POST /v1/triggers/natural</code></li>
+    <li>Query history: <code>GET /v1/history/{mint_id}</code></li>
+    <li>Verify on-chain: <code>POST /v1/settle</code></li>
+  </ol>
+
+  <h2>Endpoints</h2>
+
+  <div class="endpoint">
+    <span class="method">POST</span> <code class="path">/v1/identify</code>
+    <p class="desc">Provision or look up a persistent on-chain identity (mint_id) for one machine. Idempotent on (oem, model, serial).</p>
+<pre><code>{
+  "oem":    "fanuc",
+  "model":  "M-20iA",
+  "serial": "R30iB-12345",
+  "site":   "Line 3"
+}</code></pre>
+<pre><code>{
+  "mint_id":     "MINT-4de03b",
+  "internal_id": "fanuc:m-20ia:r30ib-12345",
+  "created":     true,
+  "machine":     { "wallet_address": "EfXdpMDk…", "status": "active" },
+  "first_seen":  "2026-05-04T01:00:00Z"
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <span class="method">POST</span> <code class="path">/v1/normalize</code>
+    <p class="desc">Translate raw OEM telemetry to canonical FCS data. Auto-provisions identity from oem/model/serial when no machine_id is given. Returns triggers_fired[] when any active trigger matches. Optional <code>idempotency_key</code> dedups retries within 24h. Optional <code>observed_at</code> (ISO 8601 controller clock) is stored alongside the server <code>ingested_at</code>.</p>
+<pre><code>{
+  "data":   { "Spindle_Speed": 2200, "spindle_load": 92 },
+  "oem":    "fanuc",
+  "model":  "M-20iA",
+  "serial": "R30iB-12345",
+  "observed_at":     "2026-05-05T09:30:15Z",
+  "idempotency_key": "optional-caller-supplied-key"
+}</code></pre>
+<pre><code>{
+  "normalized":      { "spindle_speed_rpm": 2200, "spindle_load_pct": 92 },
+  "field_mappings":  { "spindle_load": { "mapping_id": "6c34…", "canonical": "spindle_load_pct", "confidence": 0.93 } },
+  "fields_total":    2, "fields_renamed":  2, "fields_identity": 0, "fields_unknown":  0,
+  "coverage_pct":    100,
+  "machine_id":      "MINT-4de03b",
+  "history_id":      "c419…",
+  "triggers_fired":  [{ "trigger_id": "7f0c…", "trigger_name": "high spindle load", "actual_value": 92 }]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <span class="method">POST</span> <code class="path">/v1/tools</code>
+    <p class="desc">Register a webhook endpoint as a tool. Triggers reference these by tool_id. <code>auth_secret</code> returned ONCE on create; never read back via GET.</p>
+<pre><code>{
+  "name": "slack-maintenance",
+  "url":  "https://hooks.slack.com/services/T…/B…/xxx",
+  "method": "POST",
+  "payload_template": { "text": "Alert: {{oem}} {{model}} — {{field}} at {{value}}" },
+  "auth_type": "none"
+}</code></pre>
+<pre><code>{ "id": "add2…", "name": "slack-maintenance", "auth_type": "none", "enabled": true }</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <span class="method">POST</span> <code class="path">/v1/triggers/natural</code>
+    <p class="desc">Parse a natural-language instruction into a structured trigger. NEVER auto-activates; returns parsed_trigger for review and explicit POST to /v1/triggers.</p>
+<pre><code>{ "machine_id": "MINT-4de03b", "instruction": "Alert maintenance Slack when spindle load exceeds 90." }</code></pre>
+<pre><code>{
+  "parsed_trigger": {
+    "machine_id": "MINT-4de03b",
+    "name": "Spindle Load Alert",
+    "condition": { "field": "spindle_load_pct", "op": ">", "value": 90 },
+    "actions":   [{ "tool_id": "add2…" }]
+  },
+  "confirmation_required": true
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <span class="method get">GET</span> <code class="path">/v1/history/{mint_id}</code>
+    <p class="desc">Per-machine canonical history. Query params: from, to (ISO-8601), fields (csv), limit (≤1000), summary (bool).</p>
+<pre><code>GET /v1/history/MINT-4de03b?limit=5&summary=true</code></pre>
+<pre><code>{
+  "mint_id":  "MINT-4de03b",
+  "machine":  { "oem": "fanuc", "model": "M-20iA", "site": "Line 3" },
+  "row_count": 2,
+  "avg_coverage": 100,
+  "fields_covered": ["spindle_load_pct", "spindle_speed_rpm", "sensor_readings.coolant_temp"]
+}</code></pre>
+  </div>
+
+  <div class="endpoint">
+    <span class="method">POST</span> <code class="path">/v1/settle</code>
+    <p class="desc">Anchor data on Solana mainnet via the MINT relay. Add <code>?batch=true</code> with body <code>{"mint_id": "…"}</code> to Merkle-root all unsettled events for that machine into one transaction.</p>
+<pre><code>POST /v1/settle?batch=true
+{ "mint_id": "MINT-4de03b" }</code></pre>
+<pre><code>{
+  "mint_id":      "MINT-4de03b",
+  "merkle_root":  "413d5ec…",
+  "event_count":  4,
+  "tx_signature": "2yiyp…",
+  "verify_url":   "https://solscan.io/tx/2yiyp…"
+}</code></pre>
+  </div>
+
+  <h2>MCP server</h2>
+  <p>SSE endpoint: <code>https://foundrynet-mcp-production.up.railway.app/sse</code></p>
+
+  <h3>11 tools</h3>
+  <ul>
+    <li><code>identify_machine</code> — provision/lookup mint_id from (oem, model, serial)</li>
+    <li><code>normalize_telemetry</code> — raw OEM data → canonical FCS, with auto-provision + trigger eval</li>
+    <li><code>query_machine_history</code> — time-series + summary over canonical_data</li>
+    <li><code>create_automation</code> — natural language → parsed_trigger (review-then-activate)</li>
+    <li><code>activate_automation</code> — arm a parsed_trigger after user confirmation</li>
+    <li><code>list_automations</code> — show all triggers configured for a machine</li>
+    <li><code>disable_automation</code> — pause a trigger without deleting it (reversible)</li>
+    <li><code>delete_automation</code> — soft delete (30-day restorable); <code>?permanent=true</code> for hard delete</li>
+    <li><code>restore_automation</code> — undo a soft delete within 30 days</li>
+    <li><code>query_webhook_history</code> — HTTP status, retry counts, latency for a trigger's deliveries</li>
+    <li><code>verify_on_chain</code> — anchor data on Solana mainnet (single payload OR batched)</li>
+  </ul>
+
+  <h2>Reliability + provenance</h2>
+
+  <h3>Soft delete</h3>
+  <p><code>DELETE /v1/triggers/{id}</code> defaults to soft delete — sets <code>deleted_at</code>, hides from list/eval, restorable for 30 days via <code>PATCH /v1/triggers/{id}/restore</code>. Add <code>?permanent=true</code> for irrecoverable hard delete.</p>
+
+  <h3>Idempotency</h3>
+  <p><code>/v1/normalize</code> accepts an optional <code>idempotency_key</code>. If absent, server synthesizes <code>sha256(mint_id + canonical(data))[:32]</code>. Repeats within 24h return the original response with <code>deduplicated: true</code> and skip trigger evaluation.</p>
+
+  <h3>Coverage metric</h3>
+  <p>Every <code>/v1/normalize</code> response carries three counters: <code>fields_renamed</code> (source != canonical), <code>fields_identity</code> (source == canonical), <code>fields_unknown</code> (no mapping). <code>coverage_pct = (renamed + identity) / total</code>.</p>
+
+  <h3>Provenance timestamps</h3>
+  <p><code>observed_at</code> (ISO 8601 from the controller clock) is optional on <code>/v1/normalize</code>. Stored alongside <code>ingested_at</code> (server). When the difference exceeds 60s, response includes <code>clock_skew_warning</code>. Sustained-condition windows reference <code>observed_at</code> when present.</p>
+
+  <h3>Structured errors</h3>
+<pre><code>{
+  "error":  true,
+  "status": 422,
+  "field":  "body.oem",
+  "reason": "Field required",
+  "received_value": {},
+  "suggestion":     "e.g. 'fanuc'",
+  "additional_errors": [ { "field": "body.model", "reason": "Field required" } ]
+}</code></pre>
+
+  <h2>Pricing</h2>
+  <p>Metered billing via Stripe. Counts roll up to your subscription's current billing period and settle on Stripe's normal cycle. Query <code>GET /v1/usage</code> for live counts and an estimated bill.</p>
+  <ul>
+    <li><code>POST /v1/normalize</code> — <strong>1¢</strong> per call</li>
+    <li>Trigger fire (per webhook delivery, only on 2xx) — <strong>5¢</strong></li>
+    <li><code>POST /v1/settle?batch=true</code> — <strong>2¢</strong> per batch settled (skipped settles are free)</li>
+    <li><code>GET /v1/history/{mint_id}</code> — <strong>1¢</strong> per query</li>
+    <li><code>POST /v1/identify</code> — free</li>
+    <li><code>POST /v1/triggers/natural</code> — free (setup step; revenue comes from the trigger fires it produces)</li>
+    <li><code>POST /v1/feedback/{mapping_id}/...</code> — free</li>
+    <li>Trigger evaluation (the eval pass during <code>/v1/normalize</code>) — free; you only pay for fires that successfully deliver</li>
+  </ul>
+  <p>Get an API key via the self-serve flow: <code>POST /v1/keys/checkout</code> with <code>{email}</code> returns a Stripe Checkout URL; after the user adds a card, <code>POST /v1/keys/activate</code> with <code>{session_id}</code> returns the <code>fnet_…</code> key (shown once). Admin / CI keys can be minted with an <code>X-Admin-Token</code> header bypass on <code>POST /v1/keys</code>.</p>
+</section>
+
+<!-- ── LEGAL (TOS + Privacy, anchored at #terms / #privacy) ────────── -->
+<hr class="docs-divider">
+<section id="terms" class="docs legal">
+  <h1>Terms of Service</h1>
+  <p class="updated">Last updated: May 5, 2026</p>
+
+  <p>These Terms of Service ("Terms") govern your access to and use of the FoundryNet API, MCP server, and related services ("Services") provided by FoundryNet Labs ("FoundryNet," "we," "us," or "our"). By accessing or using the Services, you agree to be bound by these Terms.</p>
+
+  <h2>1. Services</h2>
+  <p>FoundryNet provides an API for industrial machine telemetry normalization, automation trigger management, machine identity provisioning, and on-chain data settlement. The Services are provided "as is" and "as available."</p>
+
+  <h2>2. Account and API Keys</h2>
+  <p>To use the Services, you must register for an API key and provide a valid payment method. You are responsible for maintaining the confidentiality of your API key and for all activities that occur under your account. You must notify us immediately of any unauthorized use.</p>
+  <p>API keys are non-transferable. We reserve the right to suspend or revoke API keys that violate these Terms or are used in a manner that degrades Service performance for other users.</p>
+
+  <h2>3. Acceptable Use</h2>
+  <p>You agree not to:</p>
+  <p>- Use the Services for any unlawful purpose or in violation of any applicable laws or regulations.<br>
+  - Attempt to gain unauthorized access to the Services, other accounts, or systems connected to the Services.<br>
+  - Reverse engineer, decompile, or disassemble any portion of the Services.<br>
+  - Use the Services to transmit malicious code or interfere with the integrity of the Services.<br>
+  - Exceed reasonable rate limits or abuse the API in a manner that degrades service for others.<br>
+  - Resell or redistribute access to the Services without our prior written consent.<br>
+  - Use the Services to make safety-critical, life-safety, or autonomous control decisions without independent verification and human oversight.</p>
+
+  <h2>4. Data and Privacy</h2>
+  <p>You retain ownership of all data you submit to the Services ("Your Data"). By submitting data, you grant us a limited license to process, normalize, store, and analyze Your Data solely for the purpose of providing the Services.</p>
+  <p>We do not sell Your Data to third parties. Normalized and aggregated data may be used to improve the FoundryNet Canonical Schema (FCS) mapping corpus. Individual machine telemetry is not shared across accounts.</p>
+  <p>See our <a href="#privacy">Privacy Policy</a> below for full details on data handling.</p>
+
+  <h2>5. On-Chain Settlement</h2>
+  <p>The Services include optional settlement of data hashes on the Solana blockchain via the MINT Protocol. On-chain transactions are irreversible by design. Settlement creates a cryptographic proof of data at a point in time; it does not constitute a warranty, certification, or endorsement of the underlying data's accuracy.</p>
+  <p>FoundryNet is not responsible for the performance, availability, or security of the Solana blockchain or any third-party blockchain infrastructure.</p>
+
+  <h2>6. Billing and Payment</h2>
+  <p>The Services are billed on a usage-based model via Stripe. You agree to pay all charges incurred under your account at the rates in effect when the usage occurred. Current pricing is published on foundrynet.io and may be updated with 30 days' notice.</p>
+  <p>All fees are non-refundable except as required by law. Failure to pay may result in suspension of your API key and account.</p>
+
+  <h2>7. Intellectual Property</h2>
+  <p>The Services, including the FoundryNet Canonical Schema (FCS), the MINT Protocol, the normalization engine, and all associated software, are the intellectual property of FoundryNet Labs. These Terms do not grant you any rights to our intellectual property except the limited right to use the Services as described herein.</p>
+  <p>The FCS canonical field vocabulary and mapping corpus are proprietary. You may not extract, replicate, or create derivative works from the mapping corpus.</p>
+
+  <h2>8. Disclaimer of Warranties</h2>
+  <p>THE SERVICES ARE PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.</p>
+  <p>FOUNDRYNET DOES NOT WARRANT THAT THE SERVICES WILL BE UNINTERRUPTED, ERROR-FREE, OR SECURE. FOUNDRYNET DOES NOT WARRANT THE ACCURACY, COMPLETENESS, OR RELIABILITY OF ANY DATA NORMALIZATION, SCORING, OR TRIGGER EVALUATION PERFORMED BY THE SERVICES.</p>
+
+  <h2>9. Limitation of Liability</h2>
+  <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, FOUNDRYNET SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO LOSS OF PROFITS, DATA, PRODUCTION, REVENUE, OR BUSINESS OPPORTUNITIES, WHETHER BASED ON WARRANTY, CONTRACT, TORT, OR ANY OTHER LEGAL THEORY.</p>
+  <p>FOUNDRYNET'S TOTAL CUMULATIVE LIABILITY SHALL NOT EXCEED THE AMOUNTS PAID BY YOU TO FOUNDRYNET IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.</p>
+
+  <h2>10. Industrial Use Disclaimer</h2>
+  <p>The Services provide data normalization, monitoring, and automation tools for industrial equipment. THE SERVICES ARE NOT INTENDED AND SHALL NOT BE USED AS THE SOLE BASIS FOR SAFETY-CRITICAL DECISIONS, MACHINE CONTROL, LIFE-SAFETY SYSTEMS, OR ANY APPLICATION WHERE FAILURE COULD RESULT IN PERSONAL INJURY, DEATH, OR SIGNIFICANT PROPERTY DAMAGE.</p>
+  <p>You are solely responsible for validating the accuracy of any data, alerts, or automations generated by the Services before acting on them in a production environment. Human oversight is required for all safety-critical operations.</p>
+
+  <h2>11. Indemnification</h2>
+  <p>You agree to indemnify, defend, and hold harmless FoundryNet Labs and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including reasonable attorneys' fees) arising from your use of the Services, your violation of these Terms, or your violation of any rights of a third party.</p>
+
+  <h2>12. Termination</h2>
+  <p>Either party may terminate these Terms at any time. Upon termination, your right to use the Services ceases immediately. We may retain Your Data for a reasonable period to facilitate data export, after which it will be deleted. On-chain settlements are permanent and cannot be deleted.</p>
+
+  <h2>13. Modifications</h2>
+  <p>We may update these Terms from time to time. We will notify you of material changes via the email associated with your account at least 30 days before the changes take effect. Continued use of the Services after changes take effect constitutes acceptance of the updated Terms.</p>
+
+  <h2>14. Governing Law</h2>
+  <p>These Terms are governed by the laws of the State of Nevada, without regard to conflict of law principles. Any disputes shall be resolved in the state or federal courts located in Washoe County, Nevada.</p>
+
+  <h2>15. Contact</h2>
+  <p>FoundryNet Labs<br>
+  Reno, Nevada<br>
+  foundrynet@proton.me</p>
+
+  <hr>
+
+  <h1 id="privacy">Privacy Policy</h1>
+  <p class="updated">Last updated: May 5, 2026</p>
+
+  <p>FoundryNet Labs ("FoundryNet," "we," "us") operates the FoundryNet API, MCP server, and related services. This Privacy Policy describes how we collect, use, and protect your information.</p>
+
+  <h2>1. Information We Collect</h2>
+
+  <h3>Account Information</h3>
+  <p>When you create an API key, we collect your email address and payment information (processed by Stripe — we do not store card numbers, bank accounts, or payment credentials).</p>
+
+  <h3>Machine Telemetry Data</h3>
+  <p>When you use the normalization and monitoring services, we receive and process the machine telemetry data you submit. This may include sensor readings, operational metrics, alarm codes, and machine identifiers (OEM, model, serial number, site location).</p>
+
+  <h3>Usage Data</h3>
+  <p>We collect information about your use of the Services, including API call counts, endpoints accessed, timestamps, and error rates. This data is used for billing, performance monitoring, and service improvement.</p>
+
+  <h3>On-Chain Data</h3>
+  <p>When data is settled on the Solana blockchain, the cryptographic hash of the data and associated transaction metadata become publicly visible and permanent. The raw underlying data is not published on-chain — only the hash.</p>
+
+  <h2>2. How We Use Your Information</h2>
+  <p>- To provide, maintain, and improve the Services.<br>
+  - To process billing and payments via Stripe.<br>
+  - To normalize and process machine telemetry as requested.<br>
+  - To improve the FoundryNet Canonical Schema mapping corpus using aggregated, anonymized field mapping patterns. Individual machine data is not shared across accounts.<br>
+  - To communicate with you about your account, service updates, and changes to these policies.<br>
+  - To detect and prevent fraud, abuse, and security incidents.</p>
+
+  <h2>3. Data Sharing</h2>
+  <p>We do not sell your personal information or machine telemetry data. We may share information with:</p>
+  <p>- <strong>Stripe</strong> — for payment processing. Subject to Stripe's privacy policy.<br>
+  - <strong>Solana blockchain</strong> — cryptographic hashes of settled data are published on the public Solana ledger. No raw telemetry is published on-chain.<br>
+  - <strong>Infrastructure providers</strong> — Railway (hosting), Supabase (database). Subject to their respective privacy policies and data processing agreements.<br>
+  - <strong>Law enforcement</strong> — if required by law, subpoena, or court order.</p>
+
+  <h2>4. Data Retention</h2>
+  <p>Machine telemetry and normalized history are retained for as long as your account is active. Upon account termination, we will retain data for 90 days to facilitate export, then delete it from our systems. On-chain settlement hashes are permanent and cannot be deleted.</p>
+  <p>Corpus feedback (field mapping corrections) may be retained indefinitely in anonymized form to improve the normalization engine.</p>
+
+  <h2>5. Data Security</h2>
+  <p>We implement reasonable technical and organizational measures to protect your data, including:</p>
+  <p>- Encryption of webhook authentication secrets at rest (Fernet symmetric encryption).<br>
+  - HMAC-SHA256 signing on all outbound webhook calls.<br>
+  - API key authentication on all endpoints.<br>
+  - Content-hash based idempotency to prevent duplicate processing.<br>
+  - Supabase Row Level Security for account isolation.</p>
+  <p>No system is perfectly secure. We cannot guarantee absolute security of your data.</p>
+
+  <h2>6. Your Rights</h2>
+  <p>You may:</p>
+  <p>- Request a copy of your data by contacting foundrynet@proton.me.<br>
+  - Request deletion of your account and associated data.<br>
+  - Correct inaccurate information in your account.<br>
+  - Opt out of non-essential communications.</p>
+
+  <h2>7. International Data</h2>
+  <p>The Services are hosted in the United States. If you access the Services from outside the US, your data may be transferred to and processed in the US. By using the Services, you consent to this transfer.</p>
+
+  <h2>8. Children</h2>
+  <p>The Services are not directed to individuals under 18. We do not knowingly collect information from children.</p>
+
+  <h2>9. Changes</h2>
+  <p>We may update this Privacy Policy from time to time. We will notify you of material changes via email at least 30 days before they take effect.</p>
+
+  <h2>10. Contact</h2>
+  <p>For privacy questions or data requests:<br>
+  FoundryNet Labs<br>
+  foundrynet@proton.me</p>
+</section>
+
+<!-- ── FOOTER ──────────────────────────────────────────────────────── -->
+<footer>
+  FoundryNet Labs<span class="sep">·</span><a href="mailto:foundrynet@proton.me">foundrynet@proton.me</a><span class="sep collapse">·</span><a href="#terms">Terms</a><span class="sep">·</span><a href="#privacy">Privacy</a><span class="sep collapse">·</span>Settled on Solana Mainnet<span class="sep">·</span><a href="https://solscan.io/account/4ZvTZ3skfeMF3ZGyABoazPa9tiudw2QSwuVKn45t2AKL">4ZvTZ3sk…2AKL</a>
+</footer>
+
+<!-- ── CHAT WIDGET (floating) ─────────────────────────────────────── -->
+<style>
+  #fn-chat-fab { position:fixed; bottom:22px; right:22px; z-index:9000;
+                 width:56px; height:56px; border-radius:50%;
+                 background:var(--jade); border:none; cursor:pointer;
+                 box-shadow:0 6px 24px rgba(26,144,88,.35);
+                 color:#050609; display:flex; align-items:center; justify-content:center;
+                 transition:transform .15s, background .15s; }
+  #fn-chat-fab:hover { background:var(--jade-soft); transform:translateY(-2px); }
+  #fn-chat-fab svg { width:26px; height:26px; }
+  #fn-chat-panel { position:fixed; bottom:90px; right:22px; z-index:9000;
+                   width:380px; max-width:calc(100vw - 32px);
+                   height:560px; max-height:calc(100vh - 110px);
+                   background:var(--bg-elev); border:1px solid var(--rule);
+                   border-radius:8px; display:none; flex-direction:column;
+                   box-shadow:0 10px 40px rgba(0,0,0,.5); overflow:hidden; }
+  #fn-chat-panel.open { display:flex; }
+  #fn-chat-head { padding:12px 16px; border-bottom:1px solid var(--rule);
+                  display:flex; justify-content:space-between; align-items:center;
+                  font-family:'JetBrains Mono',monospace; font-size:12px;
+                  color:var(--fg-mid); }
+  #fn-chat-head .tag { color:var(--amber); font-size:10px; letter-spacing:.18em;
+                       text-transform:uppercase; padding:3px 8px;
+                       border:1px solid var(--rule); border-radius:3px; }
+  #fn-chat-head button { background:none; border:none; color:var(--fg-dim);
+                         font-size:18px; cursor:pointer; padding:0 4px; }
+  #fn-chat-log { flex:1; overflow-y:auto; padding:14px 16px;
+                 font-size:13.5px; line-height:1.55; }
+  #fn-chat-log .m { margin:10px 0; white-space:pre-wrap; }
+  #fn-chat-log .m.u { color:var(--fg); }
+  #fn-chat-log .m.b { color:var(--fg); border-left:2px solid var(--jade);
+                      padding-left:10px; }
+  #fn-chat-log .m.t { color:var(--fg-dim); font-family:'JetBrains Mono',monospace;
+                      font-size:10.5px; padding:5px 8px; background:var(--bg-code);
+                      border-radius:3px; }
+  #fn-chat-log .role { font-family:'JetBrains Mono',monospace; font-size:9.5px;
+                       letter-spacing:.18em; text-transform:uppercase;
+                       color:var(--fg-dim); margin-bottom:3px; }
+  #fn-chat-form { display:flex; gap:6px; padding:10px; border-top:1px solid var(--rule); }
+  #fn-chat-form textarea { flex:1; resize:none; min-height:38px; max-height:110px;
+                           padding:8px 10px; background:var(--bg-code); color:var(--fg);
+                           border:1px solid var(--rule); border-radius:4px;
+                           font-family:'Inter',sans-serif; font-size:13px; outline:none; }
+  #fn-chat-form textarea:focus { border-color:var(--jade-soft); }
+  #fn-chat-form button { padding:8px 14px; background:var(--jade); color:#050609;
+                         border:none; border-radius:4px; cursor:pointer;
+                         font-family:'JetBrains Mono',monospace; font-size:11.5px;
+                         font-weight:500; letter-spacing:.04em; }
+  #fn-chat-form button:hover { background:var(--jade-soft); }
+  #fn-chat-form button:disabled { opacity:.55; cursor:not-allowed; }
+  #fn-chat-upsell { display:none; padding:8px 14px; border-top:1px solid var(--rule);
+                    background:var(--bg-code); color:var(--amber); font-size:11.5px;
+                    text-align:center; }
+  #fn-chat-upsell a { color:var(--amber); }
+  #fn-chat-head .link { background:none; border:none; cursor:pointer;
+                        color:var(--jade-soft); font-family:'JetBrains Mono',monospace;
+                        font-size:10.5px; letter-spacing:.04em; padding:3px 6px; }
+  #fn-chat-head .link:hover { color:var(--amber); }
+  #fn-chat-signin { display:none; padding:14px 16px;
+                    border-bottom:1px solid var(--rule); background:var(--bg-code); }
+  #fn-chat-signin.open { display:block; }
+  #fn-chat-signin p { margin:0 0 8px; color:var(--fg-mid); font-size:12px; line-height:1.5; }
+  #fn-chat-signin p.hint { margin-top:10px; font-size:11px; color:var(--fg-dim); }
+  #fn-chat-signin code { color:var(--amber); font-family:'JetBrains Mono',monospace; }
+  #fn-chat-signin input { width:100%; padding:8px 10px; background:var(--bg);
+                          color:var(--fg); border:1px solid var(--rule);
+                          border-radius:4px; font-family:'JetBrains Mono',monospace;
+                          font-size:12px; outline:none; box-sizing:border-box; }
+  #fn-chat-signin input:focus { border-color:var(--jade-soft); }
+  #fn-chat-signin .row { display:flex; gap:6px; margin-top:8px; align-items:center; }
+  #fn-chat-signin button { padding:7px 12px; background:var(--jade); color:#050609;
+                           border:none; border-radius:4px; cursor:pointer;
+                           font-family:'JetBrains Mono',monospace; font-size:11px;
+                           letter-spacing:.04em; }
+  #fn-chat-signin button.link { background:none; color:var(--fg-dim); padding:5px; }
+  #fn-chat-signin button.link:hover { color:var(--amber); }
+  #fn-chat-signin .err { display:none; margin-top:8px; color:var(--amber);
+                         font-size:11px; font-family:'JetBrains Mono',monospace; }
+  #fn-chat-signin .err.show { display:block; }
+  @media (max-width:480px){
+    #fn-chat-panel { right:8px; left:8px; width:auto; bottom:78px; height:70vh; }
+  }
+</style>
+
+<button id="fn-chat-fab" aria-label="Open chat">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M3 5.5C3 4.12 4.12 3 5.5 3h13C19.88 3 21 4.12 21 5.5v9c0 1.38-1.12 2.5-2.5 2.5H9l-4 4v-4h-.5C3.12 17 3 15.88 3 14.5v-9z"/>
+  </svg>
+</button>
+
+<div id="fn-chat-panel" role="dialog" aria-label="FoundryNet chat">
+  <div id="fn-chat-head">
+    <span>FoundryNet · <span style="color:var(--jade-soft)">try it free</span></span>
+    <span style="display:flex;align-items:center;gap:8px;">
+      <span class="tag" id="fn-chat-tag">demo</span>
+      <button type="button" id="fn-chat-auth" class="link">sign in</button>
+      <button type="button" id="fn-chat-close" aria-label="Close">×</button>
+    </span>
+  </div>
+  <div id="fn-chat-signin">
+    <p>Paste your <code>fnet_</code> API key to switch to live mode.</p>
+    <input type="password" id="fn-chat-key" placeholder="fnet_…" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button type="button" id="fn-chat-verify">Verify &amp; sign in</button>
+      <button type="button" id="fn-chat-cancel" class="link">cancel</button>
+    </div>
+    <div class="err" id="fn-chat-keyerr"></div>
+    <p class="hint">No key yet? <a href="#docs">Sign up</a> — takes about 2 minutes.</p>
+  </div>
+  <div id="fn-chat-log">
+    <div class="m b">
+      <div class="role">FoundryNet</div>Hi. Tell me about your machines and I'll help. Try: "I have a Fanuc M-20iA on Line 6 — can you connect it?"
+    </div>
+  </div>
+  <form id="fn-chat-form" autocomplete="off">
+    <textarea id="fn-chat-input" placeholder="Type a message…" rows="1"></textarea>
+    <button type="submit" id="fn-chat-send">Send</button>
+  </form>
+  <div id="fn-chat-upsell">
+    Free demo. <a href="#docs">Sign up</a> for triggers + on-chain settle.
+  </div>
+</div>
+
+<script>
+(function () {
+  var API_BASE = 'https://forge.foundrynet.io';
+
+  var panel    = document.getElementById('signup-panel');
+  var toggle   = document.getElementById('signup-toggle');
+  var stepEmail   = document.getElementById('signup-step-email');
+  var stepActive  = document.getElementById('signup-step-activating');
+  var stepKey     = document.getElementById('signup-step-key');
+  var emailFree = document.getElementById('signup-email-free');
+  var emailPaid = document.getElementById('signup-email-paid');
+  var btnFree   = document.getElementById('signup-free');
+  var btnPaid   = document.getElementById('signup-paid');
+  var errBox   = document.getElementById('signup-err');
+  var keyBox   = document.getElementById('signup-key');
+  var copyBtn  = document.getElementById('signup-copy');
+  var metaLine = document.getElementById('signup-meta');
+
+  function openPanel() {
+    panel.classList.add('open');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function showError(msg) {
+    errBox.textContent = msg;
+    errBox.classList.add('show');
+  }
+  function clearError() {
+    errBox.textContent = '';
+    errBox.classList.remove('show');
+  }
+  function showStep(which) {
+    stepEmail.style.display  = which === 'email'    ? '' : 'none';
+    stepActive.style.display = which === 'activate' ? '' : 'none';
+    stepKey.style.display    = which === 'key'      ? '' : 'none';
+  }
+
+  toggle.addEventListener('click', function (e) {
+    e.preventDefault();
+    openPanel();
+    showStep('email');
+    setTimeout(function () { emailFree.focus(); }, 200);
+  });
+
+  // Pricing-tier Starter card "Get free API key" CTA — same effect as
+  // the hero "Get your API key" button: opens the signup panel scrolled
+  // to email step, focuses the free input.
+  var tierStarter = document.getElementById('tier-starter-cta');
+  if (tierStarter) tierStarter.addEventListener('click', function (e) {
+    e.preventDefault(); toggle.click();
+  });
+
+  // Growth tier inline signup — self-serve Stripe Checkout with
+  // tier=growth in the request body. Same redirect-to-Stripe flow as
+  // the hero paid signup, just discounted prices on the subscription.
+  var emailGrowth = document.getElementById('signup-email-growth');
+  var btnGrowth   = document.getElementById('signup-growth');
+  async function submitGrowth() {
+    var email = (emailGrowth.value || '').trim();
+    if (!email || email.indexOf('@') < 1) {
+      emailGrowth.focus();
+      emailGrowth.style.borderColor = 'var(--amber)';
+      setTimeout(function () { emailGrowth.style.borderColor = ''; }, 1500);
+      return;
+    }
+    var original = btnGrowth.textContent;
+    btnGrowth.disabled = true;
+    btnGrowth.textContent = 'Redirecting…';
+    try {
+      var res = await fetch(API_BASE + '/v1/keys/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, tier: 'growth' })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok || !data.checkout_url) {
+        btnGrowth.textContent = original;
+        btnGrowth.disabled = false;
+        alert(data.reason || data.detail || ('Signup failed (HTTP ' + res.status + ')'));
+        return;
+      }
+      window.location.href = data.checkout_url;
+    } catch (e) {
+      btnGrowth.textContent = original;
+      btnGrowth.disabled = false;
+      alert('Network error: ' + e.message);
+    }
+  }
+  if (btnGrowth) btnGrowth.addEventListener('click', submitGrowth);
+  if (emailGrowth) emailGrowth.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitGrowth(); }
+  });
+
+  function lockButtons(label, which) {
+    btnFree.disabled = btnPaid.disabled = true;
+    btnFree.dataset.original = btnFree.dataset.original || btnFree.textContent;
+    btnPaid.dataset.original = btnPaid.dataset.original || btnPaid.textContent;
+    if (which === 'free') btnFree.textContent = label;
+    else                  btnPaid.textContent = label;
+  }
+  function unlockButtons() {
+    btnFree.disabled = btnPaid.disabled = false;
+    btnFree.textContent = btnFree.dataset.original || 'Get free API key →';
+    btnPaid.textContent = btnPaid.dataset.original || 'Continue to Stripe →';
+  }
+
+  async function submitSignup(tier) {
+    clearError();
+    // Each tier card has its own email input — read whichever the user typed in.
+    var src = tier === 'free' ? emailFree : emailPaid;
+    var email = (src.value || '').trim();
+    // Fall back to the OTHER input if this card's was left empty (lets the
+    // user type once and click either button).
+    if (!email) {
+      var alt = tier === 'free' ? emailPaid : emailFree;
+      email = (alt.value || '').trim();
+    }
+    if (!email || email.indexOf('@') < 1) {
+      showError('Please enter a valid email.');
+      src.focus();
+      return;
+    }
+    lockButtons(tier === 'free' ? 'Minting key…' : 'Redirecting…', tier);
+    try {
+      var res = await fetch(API_BASE + '/v1/keys/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, tier: tier })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok) {
+        showError(data.reason || data.detail || ('Signup failed (HTTP ' + res.status + ')'));
+        unlockButtons();
+        return;
+      }
+      if (tier === 'free') {
+        // Free tier returns the api_key directly — show key step inline.
+        if (!data.api_key) {
+          showError(data.warning || 'Free tier already issued for this email — check your records.');
+          unlockButtons();
+          return;
+        }
+        keyBox.textContent = data.api_key;
+        metaLine.textContent =
+          'free tier · ' + (data.calls_remaining || 50) +
+          ' calls remaining · ' + (data.email || email);
+        showStep('key');
+        return;
+      }
+      // Paid tier returns a checkout URL — redirect.
+      if (!data.checkout_url) {
+        showError(data.reason || data.detail || 'No checkout URL returned.');
+        unlockButtons();
+        return;
+      }
+      window.location.href = data.checkout_url;
+    } catch (e) {
+      showError('Network error: ' + e.message);
+      unlockButtons();
+    }
+  }
+  btnFree.addEventListener('click', function () { submitSignup('free'); });
+  btnPaid.addEventListener('click', function () { submitSignup('paid'); });
+  // Enter inside each input submits its own card.
+  emailFree.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); btnFree.click(); }
+  });
+  emailPaid.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); btnPaid.click(); }
+  });
+
+  copyBtn.addEventListener('click', async function () {
+    var key = keyBox.textContent.trim();
+    if (!key) return;
+    try {
+      await navigator.clipboard.writeText(key);
+      copyBtn.textContent = 'Copied ✓';
+      setTimeout(function () { copyBtn.textContent = 'Copy key'; }, 1800);
+    } catch (e) {
+      // Fallback: select the text so the user can ⌘C manually.
+      var range = document.createRange();
+      range.selectNodeContents(keyBox);
+      var sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      copyBtn.textContent = 'Press ⌘C / Ctrl-C';
+      setTimeout(function () { copyBtn.textContent = 'Copy key'; }, 2400);
+    }
+  });
+
+  // ── Activation handler ─────────────────────────────────────────
+  // Stripe redirects back to ?session_id=cs_… on success. Pull it,
+  // strip it from the URL (so refresh doesn't replay), and activate.
+  async function maybeActivate() {
+    var params = new URLSearchParams(window.location.search);
+    var sessionId = params.get('session_id');
+    if (!sessionId) return;
+
+    // Clean the URL immediately so a refresh doesn't re-POST. We
+    // keep the hash so #docs etc. still work.
+    var clean = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, clean);
+
+    openPanel();
+    showStep('activate');
+
+    try {
+      var res = await fetch(API_BASE + '/v1/keys/activate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId })
+      });
+      var data = await res.json().catch(function () { return {}; });
+      if (!res.ok || !data.api_key) {
+        showStep('email');
+        showError(data.reason || data.detail
+                  || ('Activation failed (HTTP ' + res.status + ')'));
+        return;
+      }
+      keyBox.textContent = data.api_key;
+      metaLine.textContent =
+        'customer ' + (data.customer_id || '?') +
+        '  ·  ' + (data.email || 'no email on file');
+      showStep('key');
+    } catch (e) {
+      showStep('email');
+      showError('Network error during activation: ' + e.message);
+    }
+  }
+  maybeActivate();
+})();
+</script>
+
+<script>
+// ── Chat widget controller ──────────────────────────────────────────
+(function(){
+  var API='https://forge.foundrynet.io';
+  var fab=document.getElementById('fn-chat-fab'),
+      panel=document.getElementById('fn-chat-panel'),
+      closeBtn=document.getElementById('fn-chat-close'),
+      log=document.getElementById('fn-chat-log'),
+      form=document.getElementById('fn-chat-form'),
+      input=document.getElementById('fn-chat-input'),
+      send=document.getElementById('fn-chat-send'),
+      tag=document.getElementById('fn-chat-tag'),
+      upsell=document.getElementById('fn-chat-upsell'),
+      authBtn=document.getElementById('fn-chat-auth'),
+      signinPanel=document.getElementById('fn-chat-signin'),
+      keyInput=document.getElementById('fn-chat-key'),
+      verifyBtn=document.getElementById('fn-chat-verify'),
+      cancelBtn=document.getElementById('fn-chat-cancel'),
+      keyErr=document.getElementById('fn-chat-keyerr');
+  var sessionId=localStorage.getItem('fn_chat_session')||null;
+  var apiKey=localStorage.getItem('fn_api_key')||null;
+
+  function bubble(cls,role,text){
+    var d=document.createElement('div'); d.className='m '+cls;
+    if(role){ var r=document.createElement('div'); r.className='role'; r.textContent=role; d.appendChild(r); }
+    d.appendChild(document.createTextNode(text));
+    log.appendChild(d); log.scrollTop=log.scrollHeight; return d;
+  }
+  function tool(text){
+    var d=document.createElement('div'); d.className='m t';
+    d.textContent='› '+text; log.appendChild(d); log.scrollTop=log.scrollHeight;
+  }
+  function open(){ panel.classList.add('open'); setTimeout(function(){input.focus();},80); }
+  function close(){ panel.classList.remove('open'); }
+  function setSignedInUI(signedIn){
+    tag.textContent=signedIn?'live':'demo';
+    upsell.style.display=signedIn?'none':'block';
+    authBtn.textContent=signedIn?'sign out':'sign in';
+  }
+  function showSignin(show){
+    signinPanel.classList.toggle('open', show);
+    keyErr.classList.remove('show'); keyErr.textContent='';
+    if(show){ setTimeout(function(){keyInput.focus();},80); }
+  }
+
+  // Restore prior auth UI state on load.
+  if(apiKey) setSignedInUI(true);
+
+  fab.addEventListener('click',function(){ panel.classList.contains('open')?close():open(); });
+  closeBtn.addEventListener('click',close);
+  input.addEventListener('input',function(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,110)+'px';});
+  input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
+
+  // ── Sign in / sign out ───────────────────────────────────────────
+  authBtn.addEventListener('click', function(){
+    if(apiKey){
+      // Sign out: clear key + bound demo session so a fresh demo starts.
+      apiKey=null;
+      localStorage.removeItem('fn_api_key');
+      localStorage.removeItem('fn_chat_session');
+      sessionId=null;
+      setSignedInUI(false);
+      bubble('b','FoundryNet','Signed out. You’re back in demo mode.');
+    } else {
+      showSignin(!signinPanel.classList.contains('open'));
+    }
+  });
+  cancelBtn.addEventListener('click', function(){ showSignin(false); });
+  keyInput.addEventListener('keydown', function(e){
+    if(e.key==='Enter'){ e.preventDefault(); verifyBtn.click(); }
+  });
+  verifyBtn.addEventListener('click', async function(){
+    keyErr.classList.remove('show'); keyErr.textContent='';
+    var k=(keyInput.value||'').trim();
+    if(!k.startsWith('fnet_')){
+      keyErr.textContent='Keys start with fnet_'; keyErr.classList.add('show'); return;
+    }
+    verifyBtn.disabled=true; verifyBtn.textContent='Verifying…';
+    try{
+      var r=await fetch(API+'/v1/whoami',{ headers:{'Authorization':'Bearer '+k} });
+      var data=await r.json().catch(function(){return {};});
+      if(!r.ok){
+        keyErr.textContent=data.detail||data.reason||'Key rejected';
+        keyErr.classList.add('show');
+        verifyBtn.disabled=false; verifyBtn.textContent='Verify & sign in'; return;
+      }
+      // Looks good — store + reset session so the next message goes through auth.
+      apiKey=k; localStorage.setItem('fn_api_key', k);
+      localStorage.removeItem('fn_chat_session'); sessionId=null;
+      keyInput.value=''; showSignin(false); setSignedInUI(true);
+      var meta=[]; if(data.has_subscription) meta.push('billing active');
+      if(data.is_demo) meta.push('demo key — full mode disabled');
+      bubble('b','FoundryNet','Signed in.'+(meta.length?' ('+meta.join(', ')+')':''));
+    } catch(err){
+      keyErr.textContent='Network error: '+err.message; keyErr.classList.add('show');
+    }
+    verifyBtn.disabled=false; verifyBtn.textContent='Verify & sign in';
+  });
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var text=input.value.trim(); if(!text) return;
+    bubble('u','You',text); input.value=''; input.style.height='auto';
+    send.disabled=true; var thinking=bubble('b','FoundryNet','…');
+    try{
+      var headers={'Content-Type':'application/json'};
+      if(apiKey) headers['Authorization']='Bearer '+apiKey;
+      var body={message:text}; if(sessionId) body.session_id=sessionId;
+      var r=await fetch(API+'/v1/chat',{method:'POST',headers:headers,body:JSON.stringify(body)});
+      var data=await r.json().catch(function(){return {};});
+      thinking.remove();
+      if(!r.ok){ bubble('b','FoundryNet',(data.detail||data.reason||'Error '+r.status)); send.disabled=false; return; }
+      sessionId=data.session_id; localStorage.setItem('fn_chat_session',sessionId);
+      setSignedInUI(!data.is_demo);
+      (data.tool_calls||[]).forEach(function(tc){ tool(tc.tool+'('+JSON.stringify(tc.args)+')'); });
+      bubble('b','FoundryNet',data.message||'(no response)');
+    }catch(err){ thinking.remove(); bubble('b','FoundryNet','Network error: '+err.message); }
+    send.disabled=false; input.focus();
+  });
+})();
+</script>
+</body>
+</html>
